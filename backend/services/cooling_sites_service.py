@@ -45,7 +45,7 @@ def _row_to_feature(row, include_distance: bool = False) -> Dict[str, Any]:
         "properties": props,
     }
 
-def list_cooling_sites_geojson(session, limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+def list_cooling_sites_geojson(session, limit: int = 600, offset: int = 0) -> Dict[str, Any]:
     q = (
         select(
             CoolingSite,

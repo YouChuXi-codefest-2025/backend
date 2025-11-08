@@ -13,7 +13,7 @@ bp = Blueprint("cooling_sites", __name__)
 @bp.get("/sites")
 def get_sites():
     try:
-        limit = int(request.args.get("limit", 100))
+        limit = int(request.args.get("limit", 600))
         offset = int(request.args.get("offset", 0))
         if limit <= 0 or limit > 1000 or offset < 0:
             raise ValueError()
