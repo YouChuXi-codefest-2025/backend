@@ -72,3 +72,20 @@ class AedSite(Base):
     place: Mapped[Optional[str]] = mapped_column(Text)
     description: Mapped[Optional[str]] = mapped_column(Text)
     geom: Mapped[Optional[Any]] = mapped_column(Geometry(geometry_type="POINT", srid=4326))
+
+
+class AqiCache(Base):
+    __tablename__ = "aqi_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    grid_lat: Mapped[float] = mapped_column(Float, nullable=False)
+    grid_lon: Mapped[float] = mapped_column(Float, nullable=False)
+    bucket_time: Mapped[Any] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    pm25_ugm3: Mapped[float] = mapped_column(Float, nullable=False)
+    aqi_pm25: Mapped[int] = mapped_column(Integer, nullable=False)
+    aqi_category: Mapped[str] = mapped_column(Text, nullable=False)
+
+    cams_reference_time: Mapped[Optional[str]] = mapped_column(Text)
+    generated_at_utc: Mapped[Any] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    generated_at_taipei: Mapped[Optional[Any]] = mapped_column(DateTime(timezone=True))
