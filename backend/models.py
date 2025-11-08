@@ -78,14 +78,15 @@ class AqiCache(Base):
     __tablename__ = "aqi_cache"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    grid_lat: Mapped[float] = mapped_column(Float, nullable=False)
-    grid_lon: Mapped[float] = mapped_column(Float, nullable=False)
-    bucket_time: Mapped[Any] = mapped_column(DateTime(timezone=True), nullable=False)
-
+    slot_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lon: Mapped[float] = mapped_column(Float, nullable=False)
+    lat_bucket: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
+    lon_bucket: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
+    grid_lat: Mapped[float | None] = mapped_column(Float)
+    grid_lon: Mapped[float | None] = mapped_column(Float)
     pm25_ugm3: Mapped[float] = mapped_column(Float, nullable=False)
-    aqi_pm25: Mapped[int] = mapped_column(Integer, nullable=False)
-    aqi_category: Mapped[str] = mapped_column(Text, nullable=False)
-
-    cams_reference_time: Mapped[Optional[str]] = mapped_column(Text)
-    generated_at_utc: Mapped[Any] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    generated_at_taipei: Mapped[Optional[Any]] = mapped_column(DateTime(timezone=True))
+    aqi: Mapped[int] = mapped_column(Integer, nullable=False)
+    aqi_category: Mapped[str | None] = mapped_column(Text)
+    cams_reference_time: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
