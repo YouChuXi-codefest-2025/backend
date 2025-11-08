@@ -169,34 +169,30 @@ def _fetch_and_upsert(session: Session, slot_ts_utc: datetime, lat: float, lon: 
             raise
     return rec
 
-def get_aqi_by_point_cached(session: Session, lat: float, lon: float) -> Dict[str, Any]:
-    """
-    10 分鐘一個 slot：
-      - 若「台北時間 分鐘%10==0」：當前 slot 無資料 → 抓一次 CAMS 並寫入 → 回傳
-      - 其他時間：直接回傳 DB 當前 slot（對齊後）的資料；若沒有，回傳最近一筆（不打外部 API）
-    """
+def get_aqi_by_point_cached(session, lat: float, lon: float, force: bool = False) -> dict:
     now_utc = datetime.now(timezone.utc)
     slot_ts_utc = _floor_to_10min_utc(now_utc)
 
-    # 1) 先找對齊時槽的快取
+    # 1) 先查當前 slot
     cached = _get_from_cache(session, slot_ts_utc, lat, lon)
     if cached:
         return _as_payload(cached)
 
-    # 2) 沒資料時，判斷是否為整 10 分鐘邊界
-    if _is_exact_10min_boundary(now_utc):
+    # 2) 查這個 bucket 有沒有任何歷史紀錄
+    latest = _get_latest_any_slot(session, lat, lon)
+
+    # 3) 觸發抓取的條件：
+    #    - force=True 明確要求
+    #    - 正好整 10 分鐘
+    #    - 完全沒有歷史紀錄（首查）
+    if force or _is_exact_10min_boundary(now_utc) or latest is None:
         rec = _fetch_and_upsert(session, slot_ts_utc, lat, lon)
         return _as_payload(rec)
 
-    # 3) 非邊界時間：不打外部 API，回傳最近一筆（若存在）
-    latest = _get_latest_any_slot(session, lat, lon)
-    if latest:
-        payload = _as_payload(latest)
-        payload["note"] = "served_from_cache_recent_slot"
-        return payload
-
-    # 4) 若完全沒有任何歷史資料，就回錯誤（或你想回空）
-    return {"error": "no cached AQI available yet; wait for next 10-minute boundary"}
+    # 4) 非邊界且已有歷史 → 回最近快取，不再打外部
+    payload = _as_payload(latest)
+    payload["note"] = "served_from_cache_recent_slot"
+    return payload
 
 def _as_payload(rec: AqiCache) -> Dict[str, Any]:
     return {
