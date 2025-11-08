@@ -1,6 +1,11 @@
-# backend/models.py
+from __future__ import annotations
+
+from typing import Any, Optional
+from datetime import datetime
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, Text, Double
+from sqlalchemy import Integer, Text, Float, DateTime, Double   
+from sqlalchemy.sql import func
 from geoalchemy2 import Geometry
 
 class Base(DeclarativeBase):
@@ -37,3 +42,33 @@ class CoolingSite(Base):
     features: Mapped[str] = mapped_column(Text)                      # 其他特色及亮點
     notes: Mapped[str] = mapped_column(Text)                         # 備註
     geom: Mapped[str] = mapped_column(Geometry(geometry_type="POINT", srid=4326))  # 由 lon/lat 建
+
+class DeviceToken(Base):
+    __tablename__ = "device_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    platform: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fcm_token: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class AedSite(Base):
+    __tablename__ = "aed_sites"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(Text)
+    address: Mapped[Optional[str]] = mapped_column(Text)
+    area_code: Mapped[Optional[str]] = mapped_column(Text)
+    lat: Mapped[Optional[float]] = mapped_column(Float)
+    lon: Mapped[Optional[float]] = mapped_column(Float)
+    category: Mapped[Optional[str]] = mapped_column(Text)
+    type: Mapped[Optional[str]] = mapped_column(Text)
+    place: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    geom: Mapped[Optional[Any]] = mapped_column(Geometry(geometry_type="POINT", srid=4326))

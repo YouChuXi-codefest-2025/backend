@@ -3,6 +3,11 @@ from db import SessionLocal
 from routes.districts import bp as districts_bp
 from routes.cooling_sites import bp as cooling_sites_bp
 from routes.heat import bp as heat_forecast_bp
+from routes.tempdiff import bp as tempdiff_bp
+from routes.devices import bp as devices_bp
+from routes.notify_internal import bp as notify_internal_bp
+from routes.aed_sites import bp as aed_sites_bp
+
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -15,6 +20,10 @@ def create_app() -> Flask:
     app.register_blueprint(cooling_sites_bp)
     app.register_blueprint(heat_forecast_bp)
 
+    app.register_blueprint(devices_bp)
+    app.register_blueprint(notify_internal_bp)
+    app.register_blueprint(tempdiff_bp)
+    app.register_blueprint(aed_sites_bp)
     @app.errorhandler(400)
     def bad_request(e):
         return jsonify(error=str(getattr(e, "description", e))), 400
