@@ -4,7 +4,7 @@ from typing import Any, Optional
 from datetime import datetime
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, Text, Float, DateTime, Double   
+from sqlalchemy import Integer, Text, Float, DateTime, Double,Numeric
 from sqlalchemy.sql import func
 from geoalchemy2 import Geometry
 
