@@ -7,6 +7,7 @@ from routes.tempdiff import bp as tempdiff_bp
 from routes.devices import bp as devices_bp
 from routes.notify_internal import bp as notify_internal_bp
 from routes.aed_sites import bp as aed_sites_bp
+from routes.aqi import bp as aqi_bp
 
 
 def create_app() -> Flask:
@@ -24,6 +25,7 @@ def create_app() -> Flask:
     app.register_blueprint(notify_internal_bp)
     app.register_blueprint(tempdiff_bp)
     app.register_blueprint(aed_sites_bp)
+    app.register_blueprint(aqi_bp)
     @app.errorhandler(400)
     def bad_request(e):
         return jsonify(error=str(getattr(e, "description", e))), 400
