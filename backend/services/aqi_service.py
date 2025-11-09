@@ -146,14 +146,13 @@ def _fetch_and_upsert(session: Session, slot_ts_utc: datetime, lat: float, lon: 
             raise RuntimeError("no CAMS data available")
 
         pm25, meta = _open_pm25_of_nearest(lat, lon, nc_path)
-        aqi, cat = _pm25_to_aqi_us_epa(pm25)
 
     rec = AqiCache(
         slot_ts=slot_ts_utc,
         lat=lat, lon=lon,
         lat_bucket=_bucket(lat), lon_bucket=_bucket(lon),
         grid_lat=meta.get("grid_lat"), grid_lon=meta.get("grid_lon"),
-        pm25_ugm3=pm25, aqi=aqi, aqi_category=cat,
+        pm25_ugm3=pm25, aqi=None, aqi_category=None,
         cams_reference_time=used_ref,
     )
     session.add(rec)
@@ -200,8 +199,6 @@ def _as_payload(rec: AqiCache) -> Dict[str, Any]:
         "bucket": {"lat_bucket": float(rec.lat_bucket), "lon_bucket": float(rec.lon_bucket)},
         "grid_point": {"lat": rec.grid_lat, "lon": rec.grid_lon},
         "pm25_ugm3": round(rec.pm25_ugm3, 2),
-        "aqi_pm25": rec.aqi,
-        "aqi_category": rec.aqi_category,
         "slot_ts_utc": rec.slot_ts.isoformat(timespec="seconds"),
         "slot_ts_taipei": rec.slot_ts.astimezone(TW_TZ).isoformat(timespec="seconds"),
         "cams_reference_time": rec.cams_reference_time,
