@@ -107,6 +107,21 @@ def _get_from_cache(session: Session, slot_ts_utc: datetime, lat: float, lon: fl
     )
     return session.execute(q).scalar_one_or_none()
 
+def _get_from_cache_by_grid(session: Session, slot_ts_utc: datetime, grid_lat: float, grid_lon: float) -> Optional[AqiCache]:
+    """根據實際的 CAMS 網格點座標查詢快取"""
+    q = (
+        select(AqiCache)
+        .where(
+            and_(
+                AqiCache.slot_ts == slot_ts_utc,
+                AqiCache.grid_lat == grid_lat,
+                AqiCache.grid_lon == grid_lon,
+            )
+        )
+        .limit(1)
+    )
+    return session.execute(q).scalar_one_or_none()
+
 def _get_latest_any_slot(session: Session, lat: float, lon: float) -> Optional[AqiCache]:
     lat_b = _bucket(lat); lon_b = _bucket(lon)
     q = (
@@ -118,7 +133,7 @@ def _get_latest_any_slot(session: Session, lat: float, lon: float) -> Optional[A
     return session.execute(q).scalar_one_or_none()
 
 def _fetch_and_upsert(session: Session, slot_ts_utc: datetime, lat: float, lon: float) -> AqiCache:
-    """打 CAMS，計算 AQI，寫入 aqi_cache（若唯一鍵衝突，取既有資料）"""
+    """打 CAMS，取得 PM2.5，寫入 aqi_cache（若同網格點已有快取則直接使用）"""
     cli = _build_cds_client()
     used_ref: Optional[str] = None
 
@@ -146,13 +161,22 @@ def _fetch_and_upsert(session: Session, slot_ts_utc: datetime, lat: float, lon: 
             raise RuntimeError("no CAMS data available")
 
         pm25, meta = _open_pm25_of_nearest(lat, lon, nc_path)
+        grid_lat = meta.get("grid_lat")
+        grid_lon = meta.get("grid_lon")
+
+        # 檢查是否已有相同網格點和時間 slot 的快取
+        if grid_lat is not None and grid_lon is not None:
+            grid_cached = _get_from_cache_by_grid(session, slot_ts_utc, grid_lat, grid_lon)
+            if grid_cached:
+                # 找到相同網格點的快取，直接回傳（避免重複請求 API）
+                return grid_cached
 
     rec = AqiCache(
         slot_ts=slot_ts_utc,
         lat=lat, lon=lon,
         lat_bucket=_bucket(lat), lon_bucket=_bucket(lon),
-        grid_lat=meta.get("grid_lat"), grid_lon=meta.get("grid_lon"),
-        pm25_ugm3=pm25, aqi=None, aqi_category=None,
+        grid_lat=grid_lat, grid_lon=grid_lon,
+        pm25_ugm3=pm25,
         cams_reference_time=used_ref,
     )
     session.add(rec)
