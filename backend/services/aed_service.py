@@ -35,7 +35,7 @@ def get_nearest_aed_geojson(session: Session, lat: float, lon: float, limit:int)
         .order_by(AedSite.geom.op("<->")(pt))
         .limit(limit)
     )
-    nearest = session.execute(q).scalar_one_or_none()
+    nearest = session.execute(q).all()
     if not nearest:
         return None
     return {
