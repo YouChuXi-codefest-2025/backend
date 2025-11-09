@@ -26,9 +26,16 @@ def get_nearest_aed():
     except Exception:
         raise BadRequest("lat/lon required")
 
+    try:
+        limit = int(request.args.get("limit", 1))
+        if limit <= 0 or limit > 100:
+            raise ValueError()
+    except Exception:
+        raise BadRequest("invalid limit (must be 1-100)")
+
     s = SessionLocal()
     try:
-        item = get_nearest_aed_geojson(s, lat=lat, lon=lon)
+        item = get_nearest_aed_geojson(s, lat=lat, lon=lon, limit=limit)
         if not item:
             return jsonify({"note": "no data"}), 200
         return jsonify(item), 200

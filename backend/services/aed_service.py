@@ -27,13 +27,13 @@ def get_all_aeds_geojson(session: Session) -> Dict[str, Any]:
     return {"type": "FeatureCollection", "features": features}
 
 
-def get_nearest_aed_geojson(session: Session, lat: float, lon: float) -> Optional[Dict[str, Any]]:
+def get_nearest_aed_geojson(session: Session, lat: float, lon: float, limit:int) -> Optional[Dict[str, Any]]:
     """根據經緯度找出最近 AED"""
     pt = func.ST_SetSRID(func.ST_Point(lon, lat), 4326)
     q = (
         select(AedSite)
         .order_by(AedSite.geom.op("<->")(pt))
-        .limit(1)
+        .limit(limit)
     )
     nearest = session.execute(q).scalar_one_or_none()
     if not nearest:
