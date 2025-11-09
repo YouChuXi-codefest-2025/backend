@@ -86,7 +86,5 @@ class AqiCache(Base):
     grid_lat: Mapped[float | None] = mapped_column(Float)
     grid_lon: Mapped[float | None] = mapped_column(Float)
     pm25_ugm3: Mapped[float] = mapped_column(Float, nullable=False)
-    aqi: Mapped[int] = mapped_column(Integer, nullable=False)
-    aqi_category: Mapped[str | None] = mapped_column(Text)
     cams_reference_time: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
