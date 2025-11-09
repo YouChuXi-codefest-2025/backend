@@ -59,7 +59,7 @@ def list_cooling_sites_geojson(session, limit: int = 600, offset: int = 0) -> Di
     features = [_row_to_feature(r, include_distance=False) for r in rows]
     return {"type": "FeatureCollection", "features": features}
 
-def nearest_cooling_site_geojson(session, lat: float, lon: float, radius_m: float = 1000.0) -> Dict[str, Any]:
+def nearest_cooling_site_geojson(session, lat: float, lon: float, radius_m: float = 1000.0, limit: int = 1) -> Dict[str, Any]:
     pt = func.ST_SetSRID(func.ST_Point(lon, lat), 4326)
 
     # 先在半徑內找最近（真實距離）
@@ -74,11 +74,13 @@ def nearest_cooling_site_geojson(session, lat: float, lon: float, radius_m: floa
             func.ST_DWithin(func.Geography(CoolingSite.geom), func.Geography(pt), radius_m),
         )
         .order_by(func.ST_Distance(func.Geography(CoolingSite.geom), func.Geography(pt)))
-        .limit(1)
+        .limit(limit)
     )
-    res = session.execute(q_within).first()
+    res = session.execute(q_within).all()
     if res:
-        return {"type": "FeatureCollection", "features": [_row_to_feature(res, include_distance=True)]}
+        # 將結果從遠到近排序
+        features = [_row_to_feature(r, include_distance=True) for r in reversed(res)]
+        return {"type": "FeatureCollection", "features": features}
 
     # 半徑內沒有 → 退回全域最近（KNN）再計距離
     q_knn = (
@@ -89,11 +91,13 @@ def nearest_cooling_site_geojson(session, lat: float, lon: float, radius_m: floa
         )
         .where(CoolingSite.geom.isnot(None))
         .order_by(CoolingSite.geom.op("<->")(pt))
-        .limit(1)
+        .limit(limit)
     )
-    res2 = session.execute(q_knn).first()
+    res2 = session.execute(q_knn).all()
     if res2:
-        return {"type": "FeatureCollection", "features": [_row_to_feature(res2, include_distance=True)]}
+        # 將結果從遠到近排序
+        features = [_row_to_feature(r, include_distance=True) for r in reversed(res2)]
+        return {"type": "FeatureCollection", "features": features}
 
     # 沒資料：回空集合（符合規格）
     return {"type": "FeatureCollection", "features": []}

@@ -43,9 +43,16 @@ def get_nearest_site():
     except Exception:
         raise BadRequest("invalid r (radius meters)")
 
+    try:
+        limit = int(request.args.get("limit", 1))
+        if limit <= 0 or limit > 100:
+            raise ValueError()
+    except Exception:
+        raise BadRequest("invalid limit (must be 1-100)")
+
     session = SessionLocal()
     try:
-        fc = nearest_cooling_site_geojson(session, lat=lat, lon=lon, radius_m=radius_m)
+        fc = nearest_cooling_site_geojson(session, lat=lat, lon=lon, radius_m=radius_m, limit=limit)
         return Response(json.dumps(fc, ensure_ascii=False), mimetype="application/geo+json")
     finally:
         session.close()
